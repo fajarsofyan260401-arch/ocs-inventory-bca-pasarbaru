@@ -9,6 +9,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <title>OCS Inventory — BCA KCU Pasar Baru</title>
 <link rel="icon" href="logo-ocs.png"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="logo-ocs.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:ital,wght@1,700;1,800&display=swap" rel="stylesheet"/>
@@ -285,6 +287,20 @@ table.rt{width:100%;border-collapse:collapse;min-width:540px;font-size:12px}
 .toast{color:#fff;padding:12px 19px;border-radius:12px;font-weight:600;font-size:13.5px;box-shadow:0 10px 28px rgba(26,29,58,.35);opacity:0;transform:translateY(-12px);transition:.25s;max-width:100%}
 .toast.show{opacity:1;transform:none}
 .toast.ok{background:var(--green)}.toast.err{background:var(--red)}.toast.info{background:var(--navy)}
+/* ===== DARK MODE ===== */
+body.dark{--bg:#131622;--card:#1C2030;--text:#E7EAF3;--muted:#8E96AE;--line:#2A3048;--slate:#9BA3BB;--slate-soft:#252A3E;--navy:#8A93FF;--navy-ink:#E7EAF3;--o-soft:#35281A;--o-line:#5A4026;--red:#E06A6A;--red-soft:#3A2528;--green:#3DBB84;--green-soft:#1A332A;--shadow:0 4px 18px rgba(0,0,0,.4)}
+body.dark .stat,body.dark .dt-card,body.dark .hero,body.dark .pk,body.dark .btn-outline,body.dark .hdr-chip,body.dark .s-chip,body.dark .chip,body.dark .x,body.dark .sum-chip,body.dark .thumb{background:var(--card)}
+body.dark input,body.dark select,body.dark textarea{background:#242A3C;border-color:#323852;color:var(--text)}
+body.dark input:focus,body.dark select:focus,body.dark textarea:focus{background:#1C2030}
+body.dark .cartrow,body.dark .receipt{background:#20242F}
+body.dark .rt th{background:#252A3E;color:#AEB6D6}
+body.dark .rt .tot td{background:#20242F;color:var(--navy-ink)}
+body.dark .prev,body.dark .pk.sel,body.dark .ph-upload{background:#2A2118}
+body.dark .c-n,body.dark .b-in{background:#252A3E;color:#9FB0FF}
+body.dark .hero::before,body.dark .hero::after{opacity:.25}
+body.dark .login-card{background:rgba(30,34,52,.92)}
+body.dark .bottom-nav{background:rgba(20,23,34,.95)}
+body.dark .app-header{background:rgba(22,25,38,.94)}
 @media(min-width:640px){.stat-grid{grid-template-columns:repeat(4,1fr)}}
 </style>
 </head>
@@ -568,6 +584,7 @@ logout:`<svg ${S}><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/><path d="m1
 image:`<svg ${S}><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="m20.5 15.5-4.2-4.2a1.4 1.4 0 0 0-2 0L7 18.5"/></svg>`,
 camera:`<svg ${S}><path d="M4 8h2.5l1.8-2.4A2 2 0 0 1 9.9 4.8h4.2a2 2 0 0 1 1.6.8L17.5 8H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2Z"/><circle cx="12" cy="14" r="3.4"/></svg>`,
 wa:`<svg ${S}><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.7-1.2A9 9 0 1 0 12 3Z"/><path d="M8.8 8.5c-.3 1.9 1.9 5 4.6 6.1 1.5.6 2.4.4 2.9-.6l.4-.9-2-1.2-.9.8c-1-.4-2.2-1.5-2.7-2.6l.9-.8-1-2.1-1 .3c-.6.2-1 .5-1.2 1Z"/></svg>`,
+moon:`<svg ${S}><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>`,
 copy:`<svg ${S}><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`
 };
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
@@ -1463,6 +1480,8 @@ function openProfile(){
    <div><div style="font-weight:700;font-size:15px">${esc(currentUser.name)}</div>
    <div class="hint">@${esc(currentUser.username)} • Role: ${esc(ROLE_LABEL[currentUser.role]||currentUser.role)}</div></div>
   </div>
+    <button class="btn btn-outline btn-block" style="margin-bottom:10px" onclick="toggleTheme()"><span class="ic">${ICONS.moon}</span><span id="themeLbl">Mode Gelap</span></button>
+  <button class="btn btn-outline btn-block" style="margin-bottom:10px" onclick="installPWA()"><span class="ic">${ICONS.down}</span>Pasang ke Home Screen</button>
   <button class="btn btn-outline btn-block" onclick="openChangePassword()"><span class="ic">${ICONS.edit}</span>Ubah Password</button>
   <button class="btn btn-danger btn-block" style="margin-top:10px" onclick="logout()"><span class="ic">${ICONS.logout}</span>Keluar</button>`);
 }
@@ -1622,9 +1641,32 @@ function exportJSON(){
  };
  r.readAsText(f);
 });
+/* ================= TEMA GELAP ================= */
+function applyTheme(){
+ const d=localStorage.getItem('ocsTheme')==='dark';
+ document.body.classList.toggle('dark',d);
+ const m=document.querySelector('meta[name="theme-color"]');
+ if(m)m.content=d?'#131622':'#2F3390';
+ const l=document.getElementById('themeLbl');if(l)l.textContent=d?'Mode Terang':'Mode Gelap';
+}
+function toggleTheme(){
+ localStorage.setItem('ocsTheme',document.body.classList.contains('dark')?'light':'dark');
+ applyTheme();
+}
 
+/* ================= PWA ================= */
+let _deferPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();_deferPrompt=e;});
+function installPWA(){
+ if(_deferPrompt){_deferPrompt.prompt();_deferPrompt.userChoice.then(()=>{_deferPrompt=null;});}
+ else toast('Buka menu browser → "Tambahkan ke layar utama"','info');
+}
+if('serviceWorker' in navigator&&location.protocol==='https:'){
+ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
 /* ================= INIT ================= */
 (function init(){
+ applyTheme();
  const su=sessionStorage.getItem(SS_KEY);
  const u=su?db.users.find(x=>x.username===su):null;
  if(u){currentUser=u;enterApp();}else showLogin();

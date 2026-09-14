@@ -177,6 +177,13 @@ textarea{resize:vertical;min-height:70px}
 .prev b{font-size:14px;letter-spacing:-.01em;color:var(--navy-ink)}
 .prev-meta{font-size:12px;color:var(--muted);font-weight:500;margin-top:2px}
 .prev-hint{font-size:12.5px;color:var(--muted);font-weight:500;background:var(--slate-soft);border:1.5px dashed #D8DDE6;border-radius:16px;padding:14px;text-align:center}
+.qtyrow{display:flex;gap:8px;align-items:stretch;margin-top:12px}
+.qtyrow input{flex:1;min-width:0}
+.qtyrow .btn{flex:none;white-space:nowrap}
+.cartrow{display:flex;align-items:center;gap:10px;background:#FAFBFD;border:1px solid var(--line);border-radius:12px;padding:8px 11px;margin-bottom:7px}
+.cartrow .cb{flex:1;min-width:0}
+.cartrow b{font-size:13.5px;display:block;color:var(--navy-ink)}
+.cartrow small{color:var(--muted);font-size:12px;font-weight:500}
 .ph-upload{display:flex;align-items:center;gap:12px;border:1.8px dashed #F0C4A5;background:#FFF7F1;border-radius:16px;padding:10px 13px;cursor:pointer;transition:.15s}
 .ph-upload:active{background:#FFEEE1}
 .ph-upload img{width:56px;height:56px;border-radius:12px;object-fit:cover;border:1px solid var(--o-line)}
@@ -305,7 +312,7 @@ table.rt{width:100%;border-collapse:collapse;min-width:540px;font-size:12px}
       <button class="btn-login" type="submit"><span class="ic" data-ic="login"></span>Masuk</button>
     </form>
   </div>
-  <div class="login-foot">OCS Inventory v6.0 &bull; Cloud Sync &bull; Internal Use</div>
+  <div class="login-foot">OCS Inventory v6.1 &bull; Cloud Sync &bull; Multi-Item</div>
 </div>
 
 <!-- ============ APLIKASI ============ -->
@@ -375,26 +382,37 @@ table.rt{width:100%;border-collapse:collapse;min-width:540px;font-size:12px}
 
     <!-- AMBIL BARANG -->
     <section id="page-ambil" class="page">
-      <div class="page-head"><h2>Form Ambil Barang</h2><p class="page-sub">Catat pengeluaran barang gudang cleaning service</p></div>
+      <div class="page-head"><h2>Form Ambil Barang</h2><p class="page-sub">Bisa beberapa barang sekaligus dalam satu transaksi</p></div>
       <div class="dt-card">
         <div class="dt-ic"><span class="ic" data-ic="calendar"></span></div>
         <div><div class="dt-day" id="ambilDay">—</div><div class="dt-date" id="ambilDateTxt">—</div></div>
         <div class="dt-right"><div class="dt-time" id="ambilClock">--:--:--</div><div class="dt-live"><span class="dot-live"></span>WAKTU REAL-TIME</div></div>
       </div>
       <div class="card">
+        <form id="ambilForm">
+          <div class="field"><label>Nama Lengkap Pengambil <span class="req">*</span></label><input id="ambilPerson" required placeholder="Contoh: Budi Santoso"></div>
+          <div class="field"><label>No. Induk Karyawan (NIK) <span class="req">*</span></label><input id="ambilNik" inputmode="numeric" required placeholder="Contoh: 01234567"></div>
+        </form>
+      </div>
+      <div class="card">
         <div class="sec-title"><span class="ic" data-ic="box"></span>Pilih Barang</div>
         <div class="search"><span class="ic" data-ic="search"></span><input id="ambilQ" placeholder="Cari barang..."></div>
         <div class="picker" id="ambilPicker"></div>
         <div id="ambilPrev" style="margin-top:4px"></div>
+        <div id="ambilQtyRow" class="hidden">
+          <div class="qtyrow">
+            <input id="ambilQty" type="number" min="1" step="1" inputmode="numeric" placeholder="Jumlah diambil, contoh: 2">
+            <button class="btn btn-navy" type="button" onclick="cartAdd()"><span class="ic" data-ic="plus"></span>Tambah</button>
+          </div>
+        </div>
       </div>
       <div class="card">
-        <form id="ambilForm">
-          <div class="field"><label>Nama Lengkap Pengambil <span class="req">*</span></label><input id="ambilPerson" required placeholder="Contoh: Budi Santoso"></div>
-          <div class="field"><label>No. Induk Karyawan (NIK) <span class="req">*</span></label><input id="ambilNik" inputmode="numeric" required placeholder="Contoh: 01234567"></div>
-          <div class="field"><label>Jumlah Diambil <span class="req">*</span></label><input id="ambilQty" type="number" min="1" step="1" inputmode="numeric" required placeholder="Contoh: 2"></div>
+        <div class="sec-title"><span class="ic" data-ic="check"></span>Keranjang <span class="link" id="cartCount" style="margin-left:0"></span></div>
+        <div id="cartList"></div>
+        <form id="ambilForm2">
           <div class="field"><label>Keperluan / Keterangan</label><textarea id="ambilNote" placeholder="Opsional. Contoh: refill stok lantai 3"></textarea></div>
-          <p class="hint" style="margin:0 0 13px">Stok berkurang otomatis &amp; langsung terlihat di semua perangkat yang terhubung.</p>
-          <button class="btn btn-primary btn-block" type="submit"><span class="ic" data-ic="up"></span>Simpan Pengambilan</button>
+          <p class="hint" style="margin:0 0 13px">Semua barang di keranjang dipotong stoknya sekaligus &amp; langsung terlihat di semua perangkat.</p>
+          <button class="btn btn-primary btn-block" type="button" onclick="submitAmbil()"><span class="ic" data-ic="up"></span>Simpan Pengambilan</button>
         </form>
       </div>
     </section>
@@ -616,6 +634,7 @@ let db=load(), currentUser=null, currentPage='dashboard';
 let riwayatFilter='all', riwayatFrom='', riwayatTo='';
 let reportMonth=todayStr().slice(0,7);
 let ambilSel=0, masukSel=0, tempPhoto='';
+let ambilCart=[];
 
 const ROLE_LABEL={admin:'Admin',manager:'Manager',supervisor:'Supervisor',cleaning:'Cleaning Service'};
 function canRestock(u){return !!u&&(u.role==='admin'||u.role==='manager'||u.role==='supervisor');}
@@ -666,7 +685,7 @@ function syncRender(){
  else if(p==='riwayat')renderRiwayat();
  else if(p==='laporan')renderLaporan();
  else if(p==='admin'){renderAdminItems();renderAdminUsers();}
- else if(p==='ambil'){renderAmbilPicker();updateAmbilPrev();}
+ else if(p==='ambil'){renderAmbilPicker();updateAmbilPrev();renderCart();}
  else if(p==='masuk'){renderMasukPicker();updateMasukPrev();}
 }
 async function initCloud(){
@@ -854,7 +873,14 @@ function renderStok(){
    </div></div>`;
  }).join(''):`<div class="empty"><span class="ic">${ICONS.search}</span>Tidak ada barang yang cocok.</div>`;
 }
-function quickTake(id){ambilSel=id;go('ambil');}
+function quickTake(id){
+ const it=db.items.find(i=>i.id===id);
+ if(it&&it.stock>0){
+  const ex=ambilCart.find(c=>c.id===id);
+  if(ex)ex.qty=Math.min(ex.qty+1,it.stock);else ambilCart.push({id,qty:1});
+ }
+ ambilSel=id;go('ambil');
+}
 function quickRestock(id){masukSel=id;go('masuk');}
 
 /* ================= RIWAYAT PER BARANG ================= */
@@ -880,7 +906,7 @@ function openItemHistory(id){
   }).join(''):`<div class="empty"><span class="ic">${ICONS.clock}</span>Belum ada transaksi untuk barang ini.</div>`}</div>`);
 }
 
-/* ================= PICKER + FORM AMBIL ================= */
+/* ================= PICKER + KERANJANG AMBIL ================= */
 function renderAmbilPicker(){
  const box=$('#ambilPicker');if(!box)return;
  const q=($('#ambilQ').value||'').trim().toLowerCase();
@@ -901,57 +927,99 @@ function pickAmbil(id){
 function updateAmbilPrev(){
  const el=$('#ambilPrev');if(!el)return;
  const it=db.items.find(i=>i.id===ambilSel);
+ const qr=document.getElementById('ambilQtyRow');
+ if(qr)qr.classList.toggle('hidden',!it);
  el.innerHTML=it?`<div class="prev">${thumbHTML(it,54)}
   <div style="flex:1;min-width:0"><b>${esc(it.name)}</b>
   <div class="prev-meta">Stok tersedia: <b>${fmtQty(it.stock)} ${esc(it.unit)}</b>${it.stock<=it.min?' • <span style="color:var(--red);font-weight:700">stok menipis</span>':''}</div></div></div>`
  :`<div class="prev-hint">Belum dipilih — ketuk salah satu barang di atas</div>`;
 }
+function renderCart(){
+ const box=$('#cartList');if(!box)return;
+ const cnt=$('#cartCount');if(cnt)cnt.textContent=ambilCart.length?`(${ambilCart.length} barang)`:'(kosong)';
+ if(!ambilCart.length){box.innerHTML=`<div class="empty" style="padding:14px 8px"><span class="ic">${ICONS.box}</span>Belum ada barang — pilih di atas, isi jumlah, lalu ketuk Tambah.</div>`;return;}
+ box.innerHTML=ambilCart.map((c,i)=>{
+  const it=db.items.find(x=>x.id===c.id);
+  if(!it)return'';
+  return `<div class="cartrow">
+   ${thumbHTML(it,40)}
+   <div class="cb"><b>${esc(it.name)}</b><small>${fmtQty(c.qty)} ${esc(it.unit)} • sisa stok ${fmtQty(it.stock)} ${esc(it.unit)}</small></div>
+   <button class="mini m-del" onclick="cartDel(${i})" title="Hapus dari keranjang">${ICONS.trash}</button>
+  </div>`;
+ }).join('');
+}
+function cartAdd(){
+ const item=db.items.find(i=>i.id===ambilSel);
+ const qty=parseInt(($('#ambilQty')||{}).value,10);
+ if(!item){toast('Pilih barang terlebih dahulu','err');return;}
+ if(!qty||qty<1){toast('Jumlah tidak valid','err');return;}
+ const ex=ambilCart.find(c=>c.id===item.id);
+ const total=(ex?ex.qty:0)+qty;
+ if(total>item.stock){toast(`Melebihi stok saat ini (${fmtQty(item.stock)} ${item.unit})`,'err');return;}
+ if(ex)ex.qty=total;else ambilCart.push({id:item.id,qty});
+ $('#ambilQty').value='';
+ renderCart();
+ toast(`${item.name} ×${qty} masuk keranjang`,'ok');
+}
+function cartDel(i){ambilCart.splice(i,1);renderCart();}
 function prepAmbil(){
  if(ambilSel&&!db.items.some(i=>i.id===ambilSel))ambilSel=0;
- renderAmbilPicker();updateAmbilPrev();
+ renderAmbilPicker();updateAmbilPrev();renderCart();
  $('#ambilPerson').value=localStorage.getItem('ocsLastPerson')||'';
  $('#ambilNik').value=localStorage.getItem('ocsLastNik')||'';
  tickClock();
 }
  $('#ambilQ').addEventListener('input',renderAmbilPicker);
- $('#ambilForm').addEventListener('submit',e=>{
- e.preventDefault();
- const item=db.items.find(i=>i.id===ambilSel);
+
+/* ================= SUBMIT MULTI-BARANG ================= */
+function submitAmbil(){
  const person=$('#ambilPerson').value.trim(), nik=$('#ambilNik').value.trim();
- const qty=parseInt($('#ambilQty').value,10), note=$('#ambilNote').value.trim();
- if(!item){toast('Pilih barang terlebih dahulu','err');return;}
+ const note=($('#ambilNote')||{}).value?$('#ambilNote').value.trim():'';
  if(!person){toast('Isi nama pengambil','err');return;}
  if(!nik){toast('Isi No. Induk Karyawan (NIK)','err');return;}
- if(!qty||qty<1){toast('Jumlah tidak valid','err');return;}
- if(!SYNC.cloud&&qty>item.stock){toast(`Stok tidak cukup! Sisa ${item.stock} ${item.unit}`,'err');return;}
+ if(!ambilCart.length){toast('Keranjang masih kosong — tambahkan minimal 1 barang','err');return;}
  localStorage.setItem('ocsLastPerson',person);localStorage.setItem('ocsLastNik',nik);
  const date=todayStr(), time=nowTime();
- if(SYNC.cloud&&fdb){
-  fdb.child('items/'+item.id+'/stock').transaction(cur=>{
-   if(cur===null||cur===undefined)return; /* barang dihapus di perangkat lain */
-   if(cur<qty)return; /* stok tidak cukup — batalkan */
-   return cur-qty;
-  },(err,committed,snap)=>{
-   if(err||!committed){toast('Gagal — stok di server berubah / tidak cukup. Periksa stok lalu ulangi.','err');return;}
-   item.stock=snap.val();save();
-   nextSeq(id=>{
-    const tx={id,ts:Date.now(),type:'out',itemId:item.id,itemName:item.name,unit:item.unit,qty,person,nik,date,time,note,by:currentUser.name};
-    db.tx.push(tx);save();fdb.child('tx/'+id).set(tx);
-    refresh();resetAmbilForm();openReceipt(tx);
+ const queue=ambilCart.slice(), done=[], failed=[];
+ const step=()=>{
+  if(!queue.length){
+   ambilCart=failed.filter(c=>db.items.some(i=>i.id===c.id));
+   save();refresh();
+   renderAmbilPicker();updateAmbilPrev();renderCart();
+   const nt=$('#ambilNote');if(nt)nt.value='';
+   if(done.length){openReceiptMulti(done,person,nik,note,date,time);toast(done.length+' pengambilan dicatat — tersinkron semua perangkat','ok');}
+   if(failed.length)toast(failed.length+' barang gagal (stok berubah/habis) — masih ada di keranjang','err');
+   return;
+  }
+  const c=queue.shift();
+  const item=db.items.find(i=>i.id===c.id);
+  if(!item){failed.push(c);step();return;}
+  const qty=c.qty;
+  if(SYNC.cloud&&fdb){
+   fdb.child('items/'+item.id+'/stock').transaction(cur=>{
+    if(cur===null||cur===undefined)return;
+    if(cur<qty)return;
+    return cur-qty;
+   },(err,committed,snap)=>{
+    if(err||!committed){failed.push(c);step();return;}
+    item.stock=snap.val();save();
+    nextSeq(id=>{
+     const tx={id,ts:Date.now(),type:'out',itemId:item.id,itemName:item.name,unit:item.unit,qty,person,nik,date,time,note,by:currentUser.name};
+     db.tx.push(tx);save();fdb.child('tx/'+id).set(tx);
+     done.push(tx);step();
+    });
    });
-  });
- }else{
-  item.stock-=qty;
-  const tx={id:++db.seq,ts:Date.now(),type:'out',itemId:item.id,itemName:item.name,unit:item.unit,qty,person,nik,date,time,note,by:currentUser.name};
-  db.tx.push(tx);save();refresh();resetAmbilForm();openReceipt(tx);
- }
-});
-function resetAmbilForm(){
- $('#ambilQty').value='';$('#ambilNote').value='';ambilSel=0;
- renderAmbilPicker();updateAmbilPrev();
+  }else{
+   if(item.stock<qty){failed.push(c);step();return;}
+   item.stock-=qty;
+   const tx={id:++db.seq,ts:Date.now(),type:'out',itemId:item.id,itemName:item.name,unit:item.unit,qty,person,nik,date,time,note,by:currentUser.name};
+   db.tx.push(tx);save();done.push(tx);step();
+  }
+ };
+ step();
 }
 
-/* ===== STRUK BUKTI PENGAMBILAN ===== */
+/* ===== STRUK BUKTI PENGAMBILAN (satu & multi) ===== */
 function receiptText(t){
  const lines=[
   '*BUKTI PENGAMBILAN BARANG*',
@@ -972,45 +1040,74 @@ function receiptText(t){
  lines.push('Dicatat oleh: '+(t.by||'-'));
  return lines.join('\n');
 }
-function openReceipt(t){
- openModal(`<div class="modal-head"><h3>Bukti Pengambilan</h3><button class="x" onclick="closeModal()"><span class="ic">${ICONS.x}</span></button></div>
-  <div class="receipt">
-   <div class="rc-title">BUKTI PENGAMBILAN BARANG</div>
-   <div class="rc-sub">OCS Inventory &bull; BCA KCU Pasar Baru</div>
-   <div class="rc-sub">No. #${t.id}</div>
-   <div class="rc-div"></div>
-   <div class="rc-item"><b>${esc(t.itemName)}</b><br><span class="rc-qty">${fmtQty(t.qty)} ${esc(t.unit||'')}</span></div>
-   <div class="rc-div"></div>
-   <div class="rc-row"><span class="k">Hari / Tanggal</span><span class="v">${longDate(t.date)}</span></div>
-   <div class="rc-row"><span class="k">Jam</span><span class="v">${t.time||'-'} WIB</span></div>
-   <div class="rc-row"><span class="k">Pengambil</span><span class="v">${esc(t.person||'-')}</span></div>
-   <div class="rc-row"><span class="k">NIK</span><span class="v">${esc(t.nik||'-')}</span></div>
-   ${t.note?`<div class="rc-row"><span class="k">Keperluan</span><span class="v">${esc(t.note)}</span></div>`:''}
-   ${(()=>{const it=db.items.find(i=>i.id===t.itemId);return it?`<div class="rc-row"><span class="k">Sisa Stok</span><span class="v">${fmtQty(it.stock)} ${esc(it.unit||'')}</span></div>`:'';})()}
-   <div class="rc-div"></div>
-   <div class="rc-row"><span class="k">Dicatat oleh</span><span class="v">${esc(t.by||'-')}</span></div>
-  </div>
-  <div class="btn-row" style="margin-top:14px">
-   <button class="btn btn-wa" style="flex:1" onclick="shareWA('${t.id}')"><span class="ic">${ICONS.wa}</span>Bagikan ke WhatsApp</button>
-   <button class="btn btn-outline" onclick="copyReceipt('${t.id}')"><span class="ic">${ICONS.copy}</span>Salin</button>
-  </div>
-  <button class="btn btn-navy btn-block" style="margin-top:8px" onclick="closeModal()">Selesai</button>`);
-}
 function getTx(id){return db.tx.find(t=>String(t.id)===String(id));}
 function shareWA(id){
  const t=getTx(id);if(!t)return;
  window.open('https://wa.me/?text='+encodeURIComponent(receiptText(t)),'_blank');
 }
-function copyReceipt(id){
- const t=getTx(id);if(!t)return;
- const txt=receiptText(t);
- if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(()=>toast('Struk disalin — tinggal tempel di WA','ok')).catch(()=>fallbackCopy(txt));}
- else fallbackCopy(txt);
-}
 function fallbackCopy(txt){
  const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();
  try{document.execCommand('copy');toast('Struk disalin','ok');}catch(e){toast('Gagal menyalin','err');}
  ta.remove();
+}
+function receiptTextMulti(list,person,nik,note,date,time){
+ const lines=[
+  '*BUKTI PENGAMBILAN BARANG*',
+  'OCS Inventory — BCA KCU Pasar Baru',
+  'Hari: '+longDate(date),
+  'Jam: '+(time||'-')+' WIB',
+  '-------------------------------'
+ ];
+ list.forEach((t,i)=>lines.push(`${i+1}. ${t.itemName} — ${fmtQty(t.qty)} ${t.unit||''}`));
+ lines.push('-------------------------------');
+ lines.push('Total     : '+list.length+' barang / '+fmtQty(list.reduce((a,t)=>a+t.qty,0))+' unit');
+ lines.push('Pengambil : '+(person||'-'));
+ lines.push('NIK       : '+(nik||'-'));
+ if(note)lines.push('Keperluan : '+note);
+ lines.push('No. Trx   : '+list.map(t=>'#'+t.id).join(', '));
+ lines.push('-------------------------------');
+ lines.push('Dicatat oleh: '+(list[0]&&list[0].by||'-'));
+ return lines.join('\n');
+}
+let _multiLast=[];
+function openReceiptMulti(list,person,nik,note,date,time){
+ _multiLast=list;
+ const rows=list.map(t=>`<div class="rc-row"><span class="v" style="text-align:left;flex:1">${esc(t.itemName)}</span><span class="k" style="color:var(--navy-ink);font-weight:800">${fmtQty(t.qty)} ${esc(t.unit||'')}</span></div>`).join('');
+ const total=list.reduce((a,t)=>a+t.qty,0);
+ openModal(`<div class="modal-head"><h3>Bukti Pengambilan</h3><button class="x" onclick="closeModal()"><span class="ic">${ICONS.x}</span></button></div>
+  <div class="receipt">
+   <div class="rc-title">BUKTI PENGAMBILAN BARANG</div>
+   <div class="rc-sub">OCS Inventory &bull; BCA KCU Pasar Baru</div>
+   <div class="rc-div"></div>
+   ${rows}
+   <div class="rc-row"><span class="k">Total</span><span class="v" style="color:var(--orange-deep);font-weight:800">${fmtQty(total)} unit</span></div>
+   <div class="rc-div"></div>
+   <div class="rc-row"><span class="k">Hari / Tanggal</span><span class="v">${longDate(date)}</span></div>
+   <div class="rc-row"><span class="k">Jam</span><span class="v">${time||'-'} WIB</span></div>
+   <div class="rc-row"><span class="k">Pengambil</span><span class="v">${esc(person||'-')}</span></div>
+   <div class="rc-row"><span class="k">NIK</span><span class="v">${esc(nik||'-')}</span></div>
+   ${note?`<div class="rc-row"><span class="k">Keperluan</span><span class="v">${esc(note)}</span></div>`:''}
+   <div class="rc-row"><span class="k">No. Transaksi</span><span class="v">${list.map(t=>'#'+esc(t.id)).join(', ')}</span></div>
+   <div class="rc-div"></div>
+   <div class="rc-row"><span class="k">Dicatat oleh</span><span class="v">${esc(list[0]&&list[0].by||'-')}</span></div>
+  </div>
+  <div class="btn-row" style="margin-top:14px">
+   <button class="btn btn-wa" style="flex:1" onclick="shareWAMulti()"><span class="ic">${ICONS.wa}</span>Bagikan ke WhatsApp</button>
+   <button class="btn btn-outline" onclick="copyReceiptMulti()"><span class="ic">${ICONS.copy}</span>Salin</button>
+  </div>
+  <button class="btn btn-navy btn-block" style="margin-top:8px" onclick="closeModal()">Selesai</button>`);
+}
+function shareWAMulti(){
+ if(!_multiLast.length)return;
+ const m=_multiLast[0];
+ window.open('https://wa.me/?text='+encodeURIComponent(receiptTextMulti(_multiLast,m.person,m.nik,m.note,m.date,m.time)),'_blank');
+}
+function copyReceiptMulti(){
+ if(!_multiLast.length)return;
+ const m=_multiLast[0];
+ const txt=receiptTextMulti(_multiLast,m.person,m.nik,m.note,m.date,m.time);
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(()=>toast('Struk disalin — tinggal tempel di WA','ok')).catch(()=>fallbackCopy(txt));}
+ else fallbackCopy(txt);
 }
 
 /* ================= PICKER + FORM MASUK ================= */

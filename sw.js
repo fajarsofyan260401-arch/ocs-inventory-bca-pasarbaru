@@ -1,4 +1,4 @@
-const V='ocs-v4';
+const V='ocs-v5';
 const CORE=['./','./index.html','./logo-ocs.png','./manifest.json'];
 self.addEventListener('install',e=>{
  e.waitUntil(caches.open(V).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()));

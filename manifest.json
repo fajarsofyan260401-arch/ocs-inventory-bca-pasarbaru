@@ -1,0 +1,14 @@
+{
+  "name": "OCS Inventory — BCA KCU Pasar Baru",
+  "short_name": "OCS Inventory",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1B1F5C",
+  "theme_color": "#2F3390",
+  "description": "Aplikasi inventaris cleaning service OCS Project BCA KCU Pasar Baru",
+  "icons": [
+    { "src": "logo-ocs.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "logo-ocs.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
